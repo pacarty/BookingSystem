@@ -20,6 +20,9 @@ src/
                                    Swagger. Depends on Application + Infrastructure.
 tests/
   BookingSystem.UnitTests       - xUnit + Moq tests for the booking service.
+clients/
+  public-site                   - React (Vite) client-facing booking flow.
+                                   No login required, by design - see below.
 ```
 
 This is a simplified clean/onion architecture: dependencies point inward.
@@ -50,6 +53,12 @@ business logic or the API layer.
   and again at the moment of booking (`HasOverlapAsync`). This closes the
   race condition where two clients view the same open slot simultaneously —
   a detail worth mentioning if it comes up in an interview.
+- **No login on the public site.** `POST /api/appointments` takes the
+  client's name/email/phone directly rather than requiring a pre-existing
+  `ClientId`. `AppointmentBookingService.BookAsync` finds an existing
+  `Client` by email or creates one on the fly. This matches how the original
+  system worked (patients never signed up for accounts) and keeps auth
+  scoped to where it actually matters — see "what's next" below.
 
 ## Getting started
 
@@ -86,19 +95,38 @@ Then browse to the printed `https://localhost:xxxx/swagger`.
 dotnet test
 ```
 
+### Running the public booking site
+```bash
+cd clients/public-site
+npm install
+cp .env.example .env    # points VITE_API_BASE_URL at the API - edit if your port differs
+npm run dev
+```
+Then open the printed `localhost` URL. Make sure the API is running first
+(and check its actual HTTPS port in Visual Studio / `launchSettings.json` —
+`.env.example` assumes `7100`, yours may differ), and that `Clients:PublicSiteUrl`
+in `appsettings.json` matches the Vite dev server's URL so CORS allows it.
+
+The flow: pick a service → pick a provider who offers it → pick a date and
+time from the availability board → enter your details → confirmed. No
+account or login needed, matching how the original patient-facing site
+worked.
+
 ## What's here vs. what's next
 
 **Implemented:**
 - Full entity model + EF Core configuration
 - Availability → slot calculation
-- Booking creation with double-booking prevention
+- Booking creation with double-booking prevention and find-or-create client
 - Status update endpoint (Confirmed/Attended/NoShow/Cancelled)
 - Notification abstraction (console-logged by default)
 - Unit tests for the booking rules
+- Public booking site (React) — the full client-facing flow, no auth
 
 **Deliberately left for the next phase** (see the project plan):
-- ASP.NET Core Identity / JWT auth with Provider/Client/Admin roles
-- The two React frontends (public booking site, provider admin dashboard)
+- ASP.NET Core Identity / JWT auth — needed for the *provider* admin site,
+  not the public one (see the "no login" note above)
+- The provider/admin React dashboard (view schedule, mark attendance)
 - Real email sending (SendGrid — free tier, cheap to add)
 - Real SMS (Twilio — costs a few cents per message; wire up only if/when
   you want a live demo)

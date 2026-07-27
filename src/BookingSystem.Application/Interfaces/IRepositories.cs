@@ -24,11 +24,22 @@ public interface IProviderRepository
     Task<Provider?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<List<Provider>> GetActiveAsync(CancellationToken ct = default);
     Task<List<Availability>> GetAvailabilityAsync(Guid providerId, CancellationToken ct = default);
+
+    // Providers who offer a given service, via the ProviderService join -
+    // used by the public site's "pick a provider for this service" step.
+    Task<List<Provider>> GetByServiceIdAsync(Guid serviceId, CancellationToken ct = default);
 }
 
 public interface IServiceRepository
 {
     Task<Service?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<List<Service>> GetActiveAsync(CancellationToken ct = default);
+}
+
+public interface IClientRepository
+{
+    Task<Client?> GetByEmailAsync(string email, CancellationToken ct = default);
+    Task AddAsync(Client client, CancellationToken ct = default);
 }
 
 public interface IUnitOfWork

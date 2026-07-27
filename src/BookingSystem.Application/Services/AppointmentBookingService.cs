@@ -14,6 +14,7 @@ public class AppointmentBookingService : IAppointmentBookingService
     private readonly IAppointmentRepository _appointments;
     private readonly IProviderRepository _providers;
     private readonly IServiceRepository _services;
+    private readonly IClientRepository _clients;
     private readonly INotificationService _notifications;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -21,12 +22,14 @@ public class AppointmentBookingService : IAppointmentBookingService
         IAppointmentRepository appointments,
         IProviderRepository providers,
         IServiceRepository services,
+        IClientRepository clients,
         INotificationService notifications,
         IUnitOfWork unitOfWork)
     {
         _appointments = appointments;
         _providers = providers;
         _services = services;
+        _clients = clients;
         _notifications = notifications;
         _unitOfWork = unitOfWork;
     }
@@ -95,10 +98,25 @@ public class AppointmentBookingService : IAppointmentBookingService
             throw new BookingConflictException("This time slot was just booked by someone else. Please choose another.");
         }
 
+        // Returning clients are matched by email rather than being asked to
+        // "sign in" - there's no auth on the public site by design.
+        var client = await _clients.GetByEmailAsync(request.ClientEmail, ct);
+        if (client is null)
+        {
+            client = new Client
+            {
+                FirstName = request.ClientFirstName,
+                LastName = request.ClientLastName,
+                Email = request.ClientEmail,
+                Phone = request.ClientPhone
+            };
+            await _clients.AddAsync(client, ct);
+        }
+
         var appointment = new Appointment
         {
             ProviderId = request.ProviderId,
-            ClientId = request.ClientId,
+            ClientId = client.Id,
             ServiceId = request.ServiceId,
             StartUtc = request.StartUtc,
             EndUtc = endUtc,
@@ -118,8 +136,8 @@ public class AppointmentBookingService : IAppointmentBookingService
             appointment.Id,
             provider.Id,
             provider.Name,
-            appointment.ClientId,
-            string.Empty, // populated by the caller/mapper once Client is loaded - see AppointmentsController
+            client.Id,
+            $"{client.FirstName} {client.LastName}",
             service.Id,
             service.Name,
             appointment.StartUtc,

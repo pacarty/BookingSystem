@@ -19,6 +19,12 @@ public class ProviderRepository : IProviderRepository
 
     public Task<List<Availability>> GetAvailabilityAsync(Guid providerId, CancellationToken ct = default) =>
         _db.Availabilities.Where(a => a.ProviderId == providerId).ToListAsync(ct);
+
+    public Task<List<Provider>> GetByServiceIdAsync(Guid serviceId, CancellationToken ct = default) =>
+        _db.ProviderServices
+            .Where(ps => ps.ServiceId == serviceId && ps.Provider.IsActive)
+            .Select(ps => ps.Provider)
+            .ToListAsync(ct);
 }
 
 public class ServiceRepository : IServiceRepository
@@ -29,4 +35,7 @@ public class ServiceRepository : IServiceRepository
 
     public Task<Service?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         _db.Services.FirstOrDefaultAsync(s => s.Id == id, ct);
+
+    public Task<List<Service>> GetActiveAsync(CancellationToken ct = default) =>
+        _db.Services.Where(s => s.IsActive).ToListAsync(ct);
 }

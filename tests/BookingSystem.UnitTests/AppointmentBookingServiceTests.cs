@@ -13,11 +13,12 @@ public class AppointmentBookingServiceTests
     private readonly Mock<IAppointmentRepository> _appointments = new();
     private readonly Mock<IProviderRepository> _providers = new();
     private readonly Mock<IServiceRepository> _services = new();
+    private readonly Mock<IClientRepository> _clients = new();
     private readonly Mock<INotificationService> _notifications = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
     private AppointmentBookingService BuildService() => new(
-        _appointments.Object, _providers.Object, _services.Object, _notifications.Object, _unitOfWork.Object);
+        _appointments.Object, _providers.Object, _services.Object, _clients.Object, _notifications.Object, _unitOfWork.Object);
 
     [Fact]
     public async Task BookAsync_Throws_WhenSlotOverlapsAnExistingAppointment()
@@ -48,7 +49,8 @@ public class AppointmentBookingServiceTests
             .ReturnsAsync(true); // simulate another booking already occupying this slot
 
         var sut = BuildService();
-        var request = new CreateAppointmentRequest(providerId, serviceId, Guid.NewGuid(), startUtc, null);
+        var request = new CreateAppointmentRequest(
+            providerId, serviceId, "Jamie", "Client", "jamie@example.com", "0400000000", startUtc, null);
 
         await Assert.ThrowsAsync<BookingConflictException>(() => sut.BookAsync(request));
     }
@@ -80,7 +82,8 @@ public class AppointmentBookingServiceTests
             });
 
         var sut = BuildService();
-        var request = new CreateAppointmentRequest(providerId, serviceId, Guid.NewGuid(), startUtc, null);
+        var request = new CreateAppointmentRequest(
+            providerId, serviceId, "Jamie", "Client", "jamie@example.com", "0400000000", startUtc, null);
 
         await Assert.ThrowsAsync<OutsideAvailabilityException>(() => sut.BookAsync(request));
     }

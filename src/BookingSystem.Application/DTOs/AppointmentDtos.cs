@@ -6,10 +6,17 @@ namespace BookingSystem.Application.DTOs;
 // serialize EF Core entities directly (risk of leaking navigation
 // properties, over-posting, lazy-loading proxies, etc).
 
+// The public site never asks a client to sign up first - it collects their
+// details as part of the booking form. AppointmentBookingService finds an
+// existing Client by email, or creates one, rather than requiring a
+// pre-existing ClientId.
 public record CreateAppointmentRequest(
     Guid ProviderId,
     Guid ServiceId,
-    Guid ClientId,
+    string ClientFirstName,
+    string ClientLastName,
+    string ClientEmail,
+    string ClientPhone,
     DateTime StartUtc,
     string? Notes
 );
