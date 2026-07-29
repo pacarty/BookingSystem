@@ -58,7 +58,56 @@ business logic or the API layer.
   `ClientId`. `AppointmentBookingService.BookAsync` finds an existing
   `Client` by email or creates one on the fly. This matches how the original
   system worked (patients never signed up for accounts) and keeps auth
-  scoped to where it actually matters — see "what's next" below.
+  scoped to where it actually matters — see "Auth" below.
+
+## Auth
+
+Only staff (Providers and Admins) authenticate — clients never do. ASP.NET
+Core Identity tables live in the same database as the domain tables
+(`BookingSystemDbContext` is now an `IdentityDbContext`), and login issues a
+JWT rather than a cookie, since the admin site is a separate SPA calling the
+API cross-origin.
+
+- **Roles:** `Admin`, `Provider`.
+- **`ApplicationUser.ProviderId`** links a Provider-role account to its
+  `Provider` row. It's how `GET /api/appointments/mine` and the ownership
+  check in `PATCH /api/appointments/{id}/status` know whose data is whose,
+  straight from a claim on the token — no extra database lookup.
+- **No self-registration.** Staff accounts are created by an admin (or, for
+  now, by `DevelopmentSeeder`) — there's deliberately no
+  `POST /api/auth/register`.
+- **Demo credentials** (created automatically on startup, Development only):
+  - Admin: `admin@bookingsystem.local` / `Passw0rd!123`
+  - Provider (linked to the seeded demo provider "Jordan Blake"):
+    `provider@bookingsystem.local` / `Passw0rd!123`
+
+  None of this seeding runs outside `Development` — a real deployment
+  creates its first admin through a proper (out-of-band) process, not a
+  hardcoded password shipped in source control.
+- Try it in Swagger: `POST /api/auth/login` with one of the demo logins,
+  copy the returned token, click **Authorize** at the top of the Swagger
+  page, paste it in as `Bearer <token>`, and the `[Authorize]`-protected
+  endpoints (`GET /api/appointments/mine`, `PATCH /api/appointments/{id}/status`)
+  will work.
+
+**⚠️ You'll need to reset your local database once for this change.** Adding
+Identity changed the EF Core model significantly (it adds `AspNetUsers`,
+`AspNetRoles`, etc.), and there's no real data in your dev database yet
+worth preserving. The simplest path:
+
+```bash
+# from the solution root
+rm -rf src/BookingSystem.Infrastructure/Migrations   # delete your existing migration
+dotnet ef database drop --project src/BookingSystem.Infrastructure --startup-project src/BookingSystem.Api
+dotnet ef migrations add InitialCreate --project src/BookingSystem.Infrastructure --startup-project src/BookingSystem.Api
+dotnet ef database update --project src/BookingSystem.Infrastructure --startup-project src/BookingSystem.Api
+```
+
+(On Windows, use `Remove-Item -Recurse -Force` instead of `rm -rf` in
+PowerShell, or just delete the `Migrations` folder in File Explorer.) After
+that, running the API in Development will also auto-apply migrations and
+re-seed on every startup via `DevelopmentSeeder`, so you shouldn't need to
+repeat this again unless you change the model further.
 
 ## Getting started
 
@@ -118,15 +167,16 @@ worked.
 - Full entity model + EF Core configuration
 - Availability → slot calculation
 - Booking creation with double-booking prevention and find-or-create client
-- Status update endpoint (Confirmed/Attended/NoShow/Cancelled)
+- Status update endpoint (Confirmed/Attended/NoShow/Cancelled), with
+  role- and ownership-based authorization
+- ASP.NET Core Identity + JWT auth for Provider/Admin accounts
 - Notification abstraction (console-logged by default)
 - Unit tests for the booking rules
 - Public booking site (React) — the full client-facing flow, no auth
 
 **Deliberately left for the next phase** (see the project plan):
-- ASP.NET Core Identity / JWT auth — needed for the *provider* admin site,
-  not the public one (see the "no login" note above)
-- The provider/admin React dashboard (view schedule, mark attendance)
+- The provider/admin React dashboard (login, view schedule, mark attendance)
+  — the API side of this is now ready (`/api/auth/login`, `/api/appointments/mine`)
 - Real email sending (SendGrid — free tier, cheap to add)
 - Real SMS (Twilio — costs a few cents per message; wire up only if/when
   you want a live demo)
