@@ -16,6 +16,10 @@ public interface IAppointmentRepository
     Task<List<Appointment>> GetForProviderBetweenAsync(
         Guid providerId, DateTime fromUtc, DateTime toUtc, CancellationToken ct = default);
 
+    // NEW - for the Admin dashboard, which isn't scoped to one provider.
+    Task<List<Appointment>> GetAllBetweenAsync(
+        DateTime fromUtc, DateTime toUtc, CancellationToken ct = default);
+
     Task AddAsync(Appointment appointment, CancellationToken ct = default);
 }
 

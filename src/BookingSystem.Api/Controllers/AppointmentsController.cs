@@ -51,6 +51,22 @@ public class AppointmentsController : ControllerBase
         }
     }
 
+    // GET /api/appointments - the Admin dashboard's all-providers schedule view.
+    [Authorize(Roles = "Admin")]
+    [HttpGet]
+    public async Task<IActionResult> GetAll(CancellationToken ct)
+    {
+        var appointments = await _appointments.GetAllBetweenAsync(
+            DateTime.UtcNow, DateTime.UtcNow.AddDays(30), ct);
+
+        var response = appointments.Select(a => new AppointmentResponse(
+            a.Id, a.ProviderId, a.Provider.Name, a.ClientId,
+            $"{a.Client.FirstName} {a.Client.LastName}", a.ServiceId, a.Service.Name,
+            a.StartUtc, a.EndUtc, a.Status, a.Notes));
+
+        return Ok(response);
+    }
+
     // GET /api/appointments/mine - the provider admin site's schedule view.
     // Scoped to the calling provider via the "providerId" claim on their
     // JWT - a Provider can never pass a different provider's ID to see

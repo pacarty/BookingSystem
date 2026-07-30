@@ -35,6 +35,16 @@ public class AppointmentRepository : IAppointmentRepository
                     a.StartUtc < toUtc && fromUtc < a.EndUtc)
         .ToListAsync(ct);
 
+    public Task<List<Appointment>> GetAllBetweenAsync(DateTime fromUtc, DateTime toUtc, CancellationToken ct = default) =>
+    _db.Appointments
+        .Include(a => a.Provider)
+        .Include(a => a.Client)
+        .Include(a => a.Service)
+        .Where(a => a.Status != Domain.Enums.AppointmentStatus.Cancelled &&
+                    a.StartUtc < toUtc && fromUtc < a.EndUtc)
+        .OrderBy(a => a.StartUtc)
+        .ToListAsync(ct);
+
     public async Task AddAsync(Appointment appointment, CancellationToken ct = default) =>
         await _db.Appointments.AddAsync(appointment, ct);
 }
