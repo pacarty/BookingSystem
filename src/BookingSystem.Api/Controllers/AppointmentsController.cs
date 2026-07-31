@@ -1,11 +1,12 @@
-using System.Security.Claims;
 using BookingSystem.Application.DTOs;
 using BookingSystem.Application.Exceptions;
 using BookingSystem.Application.Interfaces;
 using BookingSystem.Application.Services;
+using BookingSystem.Domain.Exceptions;
 using BookingSystem.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace BookingSystem.Api.Controllers;
 
@@ -132,11 +133,15 @@ public class AppointmentsController : ControllerBase
             if (providerId != appointment.ProviderId) return Forbid();
         }
 
-        appointment.Status = request.Status;
-        appointment.UpdatedUtc = DateTime.UtcNow;
-        // EF Core is already tracking this entity because it was loaded via
-        // GetByIdAsync in the same DbContext scope, so no explicit Update()
-        // call is needed - just save.
+        try
+        {
+            appointment.UpdateStatus(request.Status);
+        }
+        catch (InvalidStatusTransitionException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+
         await _unitOfWork.SaveChangesAsync(ct);
 
         return NoContent();
