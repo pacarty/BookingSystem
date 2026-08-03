@@ -183,22 +183,25 @@ worked.
 - Full entity model + EF Core configuration
 - Availability → slot calculation
 - Booking creation with double-booking prevention and find-or-create client
-- Status update endpoint (Confirmed/Attended/NoShow/Cancelled), with
-  role- and ownership-based authorization
+- Status update endpoint (Confirmed/Attended/NoShow/Cancelled), with role- and ownership-based authorization, and validated status transitions
 - ASP.NET Core Identity + JWT auth for Provider/Admin accounts
 - Notification abstraction (console-logged by default)
 - Unit tests for the booking rules
 - Public booking site (React) — the full client-facing flow, no auth
+- Provider/admin React dashboard — login, view appointments (scoped to own schedule for Providers, all appointments for Admins), and confirm/attend/no-show/cancel actions with server-side transition validation
 - Live deployment: API on App Service, database on Azure SQL, both
   frontends on Static Web Apps (see "Live demo" above)
 
 **Deliberately left for the next phase** (see the project plan):
-- The provider/admin React dashboard (login, view schedule, mark attendance)
-  — the API side of this is now ready (`/api/auth/login`, `/api/appointments/mine`)
 - Real email sending (SendGrid — free tier, cheap to add)
 - Real SMS (Twilio — costs a few cents per message; wire up only if/when
   you want a live demo)
 - Recurring cancellations / time-off exceptions on top of weekly `Availability`
+- Admin-driven staff onboarding — currently the only way a Provider
+  account gets created is the hardcoded `DevelopmentSeeder`; there's no
+  real "Admin adds a new Provider" flow yet (create the `Provider` row,
+  create the linked `ApplicationUser`, assign the `Provider` role, get
+  them a way to set their own password)
 
 
 ## A note on scaffolding
