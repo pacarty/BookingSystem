@@ -5,6 +5,22 @@ providers for a given service; providers manage their schedule and mark
 attendance. Built to demonstrate clean layering, EF Core, and ASP.NET Core
 Web API patterns for a .NET developer portfolio.
 
+## Live demo
+
+- **Public booking site:** https://blue-ground-046726800-preview.eastasia.7.azurestaticapps.net
+- **Staff dashboard:** https://wonderful-meadow-08b0a6900-preview.eastasia.7.azurestaticapps.net
+- **API (Swagger):** https://bookingsystem-api-pat-cyavgwezf6decwhk.australiaeast-01.azurewebsites.net/swagger
+
+Demo staff logins for the dashboard:
+- Admin: `admin@bookingsystem.local` / `Passw0rd!123`
+- Provider ("Jordan Blake"): `provider@bookingsystem.local` / `Passw0rd!123`
+
+**Note on first load:** the API runs on Azure's free App Service tier, which
+spins down after ~20 minutes of inactivity to keep hosting cost at $0. The
+first request after a period of idle time can take 10–30 seconds to respond
+while it cold-starts back up — an intentional cost trade-off for a
+portfolio project, not a bug. A refresh (or just waiting it out) resolves it.
+
 ## Solution layout
 
 ```
@@ -173,6 +189,8 @@ worked.
 - Notification abstraction (console-logged by default)
 - Unit tests for the booking rules
 - Public booking site (React) — the full client-facing flow, no auth
+- Live deployment: API on App Service, database on Azure SQL, both
+  frontends on Static Web Apps (see "Live demo" above)
 
 **Deliberately left for the next phase** (see the project plan):
 - The provider/admin React dashboard (login, view schedule, mark attendance)
@@ -181,7 +199,7 @@ worked.
 - Real SMS (Twilio — costs a few cents per message; wire up only if/when
   you want a live demo)
 - Recurring cancellations / time-off exceptions on top of weekly `Availability`
-- Deployment to Azure App Service + Azure SQL
+
 
 ## A note on scaffolding
 
