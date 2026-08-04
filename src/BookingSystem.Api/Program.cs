@@ -21,8 +21,7 @@ builder.Services.AddDbContext<BookingSystemDbContext>(options =>
 builder.Services
     .AddIdentityCore<ApplicationUser>(options =>
     {
-        // Relaxed for a portfolio demo; a real deployment would tighten this
-        // (and enforce it via appsettings per environment, not hardcode it).
+        // For demo purposes, the requirements are kept simple
         options.Password.RequireNonAlphanumeric = false;
         options.Password.RequiredLength = 8;
     })

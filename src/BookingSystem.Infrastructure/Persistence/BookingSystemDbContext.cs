@@ -35,10 +35,6 @@ public class BookingSystemDbContext : IdentityDbContext<ApplicationUser, Identit
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // Keeping entity configuration in separate IEntityTypeConfiguration<T>
-        // classes (rather than inline here) is the pattern EF Core docs and
-        // most real codebases use - it's worth being able to speak to this
-        // choice in an interview.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(BookingSystemDbContext).Assembly);
     }
 }

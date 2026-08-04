@@ -1,4 +1,4 @@
-# BookingSystem — starter solution
+# BookingSystem
 
 A generic multi-provider appointment booking system: clients book time with
 providers for a given service; providers manage their schedule and mark
@@ -39,6 +39,9 @@ tests/
 clients/
   public-site                   - React (Vite) client-facing booking flow.
                                    No login required, by design - see below.
+  admin-site                    - React (Vite) staff dashboard. Login, view
+                                    appointments, and update their status.
+                                    JWT-authenticated - see "Auth" below.
 ```
 
 This is a simplified clean/onion architecture: dependencies point inward.
@@ -106,31 +109,12 @@ API cross-origin.
   endpoints (`GET /api/appointments/mine`, `PATCH /api/appointments/{id}/status`)
   will work.
 
-**⚠️ You'll need to reset your local database once for this change.** Adding
-Identity changed the EF Core model significantly (it adds `AspNetUsers`,
-`AspNetRoles`, etc.), and there's no real data in your dev database yet
-worth preserving. The simplest path:
-
-```bash
-# from the solution root
-rm -rf src/BookingSystem.Infrastructure/Migrations   # delete your existing migration
-dotnet ef database drop --project src/BookingSystem.Infrastructure --startup-project src/BookingSystem.Api
-dotnet ef migrations add InitialCreate --project src/BookingSystem.Infrastructure --startup-project src/BookingSystem.Api
-dotnet ef database update --project src/BookingSystem.Infrastructure --startup-project src/BookingSystem.Api
-```
-
-(On Windows, use `Remove-Item -Recurse -Force` instead of `rm -rf` in
-PowerShell, or just delete the `Migrations` folder in File Explorer.) After
-that, running the API in Development will also auto-apply migrations and
-re-seed on every startup via `DevelopmentSeeder`, so you shouldn't need to
-repeat this again unless you change the model further.
-
 ## Getting started
 
 You'll need:
 - .NET 10 SDK
 - SQL Server LocalDB (ships with Visual Studio) or a SQL Server/Azure SQL instance
-- Node.js 20+ (for the React frontends, once you build them)
+- Node.js 20+ (for the React frontends)
 
 ### Visual Studio
 1. Open `BookingSystem.sln`.
@@ -139,7 +123,6 @@ You'll need:
 4. Open the Package Manager Console, select `BookingSystem.Infrastructure` as
    the default project, and run:
    ```
-   Add-Migration InitialCreate -StartupProject BookingSystem.Api
    Update-Database -StartupProject BookingSystem.Api
    ```
 5. Press F5. Swagger UI opens automatically in Development.
@@ -149,7 +132,6 @@ You'll need:
 cd BookingSystem
 dotnet restore
 dotnet tool install --global dotnet-ef   # if you don't already have it
-dotnet ef migrations add InitialCreate --project src/BookingSystem.Infrastructure --startup-project src/BookingSystem.Api
 dotnet ef database update --project src/BookingSystem.Infrastructure --startup-project src/BookingSystem.Api
 dotnet run --project src/BookingSystem.Api
 ```
@@ -167,8 +149,7 @@ npm install
 cp .env.example .env    # points VITE_API_BASE_URL at the API - edit if your port differs
 npm run dev
 ```
-Then open the printed `localhost` URL. Make sure the API is running first
-(and check its actual HTTPS port in Visual Studio / `launchSettings.json` —
+Then open the printed `localhost` URL (defaults to port 5173). Make sure the API is running first (and check its actual HTTPS port in Visual Studio / `launchSettings.json` —
 `.env.example` assumes `7100`, yours may differ), and that `Clients:PublicSiteUrl`
 in `appsettings.json` matches the Vite dev server's URL so CORS allows it.
 
@@ -176,6 +157,20 @@ The flow: pick a service → pick a provider who offers it → pick a date and
 time from the availability board → enter your details → confirmed. No
 account or login needed, matching how the original patient-facing site
 worked.
+
+### Running the admin dashboard
+```bash
+cd clients/admin-site
+npm install
+cp .env.example .env    # points VITE_API_BASE_URL at the API - edit if your port differs
+npm run dev
+```
+
+Runs on a fixed port, 5174 (not Vite's default 5173), so it doesn't collide
+with the public site if you're running both at once, and so it matches
+`Clients:AdminSiteUrl` in `appsettings.json`. Log in with either demo
+account above — Admin sees every appointment across all providers, Provider
+sees only their own — and confirm/mark attendance/cancel from there.
 
 ## What's here vs. what's next
 
@@ -192,7 +187,7 @@ worked.
 - Live deployment: API on App Service, database on Azure SQL, both
   frontends on Static Web Apps (see "Live demo" above)
 
-**Deliberately left for the next phase** (see the project plan):
+**Deliberately left for the next phase:**:
 - Real email sending (SendGrid — free tier, cheap to add)
 - Real SMS (Twilio — costs a few cents per message; wire up only if/when
   you want a live demo)
@@ -202,12 +197,8 @@ worked.
   real "Admin adds a new Provider" flow yet (create the `Provider` row,
   create the linked `ApplicationUser`, assign the `Provider` role, get
   them a way to set their own password)
-
-
-## A note on scaffolding
-
-`dotnet ef migrations add` needs to run in an environment with the .NET SDK
-and NuGet access, which this sandbox didn't have — so the migration itself
-isn't included here. The model above is what `Add-Migration InitialCreate`
-will generate tables from; running it locally is the very first thing to do
-once you open this in Visual Studio or VS Code.
+- Appointment reminders — `INotificationService.SendAppointmentReminderAsync`
+  exists and is implemented, but nothing calls it yet. Needs a scheduled
+  background job (an ASP.NET Core `BackgroundService`, or a separate
+  Azure Function on a timer trigger) that periodically checks for
+  upcoming appointments and fires reminders for them.
