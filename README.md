@@ -40,8 +40,8 @@ clients/
   public-site                   - React (Vite) client-facing booking flow.
                                    No login required, by design - see below.
   admin-site                    - React (Vite) staff dashboard. Login, view
-                                    appointments, and update their status.
-                                    JWT-authenticated - see "Auth" below.
+                                   appointments, and update their status.
+                                   JWT-authenticated - see "Auth" below.
 ```
 
 This is a simplified clean/onion architecture: dependencies point inward.
